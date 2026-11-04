@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101d35">
+  <meta name="description" content="DashFlow: an interactive food delivery dispatch simulation demonstrating a manually implemented Circular Queue and Deque.">
+  <title>DashFlow — Smart Food Delivery Dispatch</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%23c4f566'/%3E%3Cpath d='M10 11h11l-6 9h15L16 32l5-9H9l7-9h-6z' fill='%23111411'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#dispatch">Skip to dispatch board</a>
+  <header class="site-header">
+    <div class="header-inner page-width">
+      <a class="brand" href="#top" aria-label="DashFlow home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M7 7h11l-5 8h13L13 27l5-9H6l7-8H7z"/></svg></span>DashFlow<span class="brand-dot">.</span></a>
+      <nav aria-label="Main navigation"><a class="nav-link active" href="#dispatch">Dispatch</a><a class="nav-link" href="#dsa-logic">DSA Logic</a><a class="nav-link" href="#about">About</a></nav>
+      <div class="online"><span class="status-dot" aria-hidden="true"></span><span>DISPATCH ONLINE</span></div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero page-width" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="mini-cross" aria-hidden="true">+</span> BUILT FOR THE NEXT ORDER</div>
+        <h1 id="hero-title">Deliver fast.<br><span>Queue smart.</span></h1>
+        <p>A smarter way to keep deliveries moving. Circular Queue for regular orders. Deque for the ones that can’t wait.</p>
+        <div class="hero-actions"><a href="#dispatch" class="button button-primary">OPEN DISPATCH BOARD <span aria-hidden="true">↗</span></a><button class="button button-quiet" data-action="demo">LOAD DEMO ORDERS <span aria-hidden="true">↓</span></button></div>
+        <div class="hero-footnote"><span class="small-dot" aria-hidden="true"></span> Real algorithms. Live visualization. Zero dependencies.</div>
+      </div>
+      <div class="routing-diagram" aria-label="Regular orders enter a Circular Queue. Priority orders enter a Deque. Driver Dispatch checks the Deque first.">
+        <div class="diagram-heading"><span>DISPATCH ARCHITECTURE</span><span class="mono">SYS / 01</span></div>
+        <div class="diagram-grid">
+          <div class="route-node regular-route"><span class="route-icon" aria-hidden="true">↻</span><div><span class="route-label">Regular orders</span><strong>Circular Queue</strong><span class="route-detail">FIFO · 8 slots</span></div></div>
+          <div class="route-node priority-route"><span class="route-icon" aria-hidden="true">⇄</span><div><span class="route-label">Priority orders</span><strong>Deque</strong><span class="route-detail">DOUBLE-ENDED · 6 slots</span></div></div>
+          <div class="route-connector" aria-hidden="true"><svg viewBox="0 0 70 180" preserveAspectRatio="none"><path d="M0 44H22Q32 44 32 54V126Q32 136 42 136H65M0 136H65"/><path d="m57 130 8 6-8 6"/></svg></div>
+          <div class="route-destination"><svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M5 12h19v17H5zM24 18h6l5 6v5H24M8 8h11M2 19h9"/><circle cx="12" cy="30" r="3"/><circle cx="29" cy="30" r="3"/></svg><strong>Driver<br>Dispatch</strong><span>PRIORITY FIRST</span></div>
+        </div>
+        <div class="diagram-policy"><span class="small-dot violet" aria-hidden="true"></span><code>Deque → Circular Queue → Rider</code><span aria-hidden="true">↗</span></div>
+      </div>
+    </section>
+
+    <section id="dispatch" class="dispatch-section page-width" aria-labelledby="dispatch-title">
+      <div class="section-heading"><div><div class="eyebrow muted">THE OPERATIONS FLOOR</div><h2 id="dispatch-title">Dispatch control<span class="heading-dot">.</span></h2></div><div class="session-tag"><span class="status-dot" aria-hidden="true"></span> LIVE SIMULATION <span class="session-divider">/</span> <time id="sessionClock">00:00:00 UTC</time></div></div>
+
+      <div class="metrics" aria-label="Live session metrics">
+        <div class="metric"><div class="metric-label">DISPATCHED <span aria-hidden="true">↗</span></div><div class="metric-value"><span id="dispatchedMetric">00</span><span class="metric-unit">orders</span></div><div class="metric-note">Assigned to a rider</div></div>
+        <div class="metric"><div class="metric-label">QUEUE OPS <span aria-hidden="true">⇄</span></div><div class="metric-value"><span id="operationsMetric">00</span><span class="metric-unit">operations</span></div><div class="metric-note">Successful inserts + removals</div></div>
+        <div class="metric"><div class="metric-label">REVENUE <span aria-hidden="true">₹</span></div><div class="metric-value"><span id="revenueMetric">₹0</span></div><div class="metric-note">Value of dispatched orders</div></div>
+        <div class="metric"><div class="metric-label">SYSTEM LOAD <span id="waitingMetric">0 / 14</span></div><div class="metric-value"><span id="loadMetric">0<span class="percent">%</span></span><span class="metric-unit">capacity</span></div><div class="load-track"><div id="loadBar"></div></div></div>
+      </div>
+
+      <div id="systemMessage" class="system-message" role="status" aria-live="polite" aria-atomic="true"><span class="message-icon" aria-hidden="true">↳</span><span id="messageText">System ready. Add an order or load the demo to begin.</span><span class="message-label">LOCAL SESSION</span></div>
+
+      <div class="dashboard-grid">
+        <section class="panel intake-panel" aria-labelledby="intake-title">
+          <div class="panel-heading"><div><span class="panel-number">01</span><h3 id="intake-title">Order intake</h3></div><span class="panel-symbol" aria-hidden="true">+</span></div>
+          <p class="panel-subtitle">Every delivery starts here.</p>
+          <form id="orderForm">
+            <label for="customer">Customer name</label><input id="customer" name="customer" type="text" placeholder="e.g. Anu Sharma" maxlength="40" required autocomplete="off">
+            <label for="restaurant">Restaurant name</label><input id="restaurant" name="restaurant" type="text" placeholder="e.g. Spice Route" maxlength="40" required autocomplete="off">
+            <div class="form-row"><div><label for="zone">Delivery zone</label><select id="zone" name="zone"><option value="Central">Central</option><option value="North">North</option><option value="South">South</option><option value="East">East</option><option value="West">West</option></select></div><div><label for="amount">Order amount</label><div class="amount-field"><span aria-hidden="true">₹</span><input id="amount" name="amount" type="number" min="0.01" max="100000" step="0.01" placeholder="280" required inputmode="decimal"></div></div></div>
+            <div class="intake-actions"><button class="button button-primary" type="submit" data-lane="regular"><span>ADD REGULAR ORDER</span><span aria-hidden="true">↗</span></button><button class="button button-violet" type="submit" data-lane="urgent"><span>ADD URGENT TO FRONT</span><span aria-hidden="true">↑</span></button><button class="button button-outline" type="submit" data-lane="priority"><span>ADD PRIORITY TO REAR</span><span aria-hidden="true">↓</span></button></div>
+          </form>
+          <div class="dispatch-actions"><div class="tiny-label">READY TO MOVE</div><button class="button button-dispatch" data-action="dispatch"><span>DISPATCH NEXT ORDER</span><span aria-hidden="true">→</span></button><button class="button button-outline" data-action="batch"><span>DISPATCH UP TO 3 ORDERS</span><span class="key-badge" aria-hidden="true">×3</span></button><p class="policy-note"><span class="small-dot violet" aria-hidden="true"></span> Priority Deque is always checked first.</p></div>
+          <button class="reset-button" data-action="reset"><span aria-hidden="true">↺</span> RESET SIMULATION</button>
+        </section>
+
+        <section class="panel queue-panel" aria-labelledby="queue-title">
+          <div class="panel-heading"><div><span class="panel-number">02</span><h3 id="queue-title">Circular Queue</h3></div><span class="count-badge lime"><span id="queueCount">0</span> / 8</span></div>
+          <div class="queue-subhead"><p class="panel-subtitle">Regular orders · First in, first out</p><span class="tiny-label">FIXED CAPACITY</span></div>
+          <div class="queue-legend"><span><i class="legend-dot lime"></i>Occupied</span><span><i class="legend-dot cyan"></i>Front</span><span><i class="legend-dot orange"></i>Rear</span><span><i class="legend-dot empty"></i>Available</span></div>
+          <div class="circular-stage" id="circularStage">
+            <svg class="queue-orbit" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><circle cx="50" cy="50" r="37"/><circle class="orbit-inner" cx="50" cy="50" r="28"/><path class="orbit-arrow" d="m45 12 5 1-4 3M88 45l-1 5-3-4M55 88l-5-1 4-3M12 55l1-5 3 4"/></svg>
+            <div class="queue-center"><span class="tiny-label">QUEUE</span><strong id="queueState">EMPTY</strong><div class="center-pointers"><span class="front-text">F: <b id="frontIndex">−1</b></span><span class="rear-text">R: <b id="rearIndex">−1</b></span></div><span class="center-caption" id="queueCenterCaption">Awaiting orders</span></div>
+            <div id="queueSlots" class="queue-slots" aria-label="Eight physical array slots"></div>
+          </div>
+          <div class="memory-section"><div class="memory-label"><span class="tiny-label">PHYSICAL ARRAY</span><span class="tiny-label">INDEX 0 → 7</span></div><div class="memory-strip" id="memoryStrip" aria-label="Physical array occupancy"></div></div>
+          <div class="algorithm-readout"><div><span class="algorithm-icon" aria-hidden="true">↻</span><code>rear = (rear + 1) % 8</code></div><p id="queueTransition">Empty queue: front = rear = −1</p></div>
+          <div class="queue-bottom"><span class="small-dot" aria-hidden="true"></span><span>Freed slots are reused. No shifting. O(1) operations.</span></div>
+        </section>
+
+        <div class="right-column">
+          <section class="panel deque-panel" aria-labelledby="deque-title">
+            <div class="panel-heading"><div><span class="panel-number">03</span><h3 id="deque-title">Priority Deque</h3></div><span class="count-badge violet-text"><span id="dequeCount">0</span> / 6</span></div>
+            <p class="panel-subtitle">Two ends. Higher priority.</p>
+            <div class="deque-end"><span>↓ FRONT / URGENT</span><span class="violet-text">DISPATCH FIRST</span></div>
+            <div id="dequeOrders" class="deque-orders" aria-label="Priority orders, from front to rear"></div>
+            <div class="deque-end rear-end"><span>↑ REAR</span><span id="dequeAvailable">6 SLOTS AVAILABLE</span></div>
+            <div class="deque-controls"><button class="button button-small" data-action="remove-front">REMOVE FRONT <span aria-hidden="true">↑</span></button><button class="button button-small" data-action="remove-rear">REMOVE REAR <span aria-hidden="true">↓</span></button></div>
+          </section>
+
+          <section class="panel latest-panel" aria-labelledby="latest-title">
+            <div class="panel-heading"><div><span class="dispatch-indicator" aria-hidden="true"></span><h3 id="latest-title">Latest dispatch</h3></div><span id="latestDispatchId" class="dispatch-id">D-000</span></div>
+            <div id="latestDispatch" class="latest-dispatch"><div class="empty-dispatch"><svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M5 12h19v17H5zM24 18h6l5 6v5H24M8 8h11M2 19h9"/><circle cx="12" cy="30" r="3"/><circle cx="29" cy="30" r="3"/></svg><strong>Ready when you are.</strong><p>Dispatch an order to see its rider, route and ETA here.</p></div></div>
+          </section>
+        </div>
+      </div>
+
+      <section class="panel trace-panel" aria-labelledby="trace-title">
+        <div class="trace-heading"><div><span class="terminal-mark" aria-hidden="true">&gt;_</span><h3 id="trace-title">Operation trace</h3><span class="trace-counter" id="traceCounter">0 EVENTS</span></div><button class="text-button" data-action="clear-log">CLEAR LOG <span aria-hidden="true">×</span></button></div>
+        <div class="trace-columns" aria-hidden="true"><span>TIME / UTC</span><span>OPERATION</span><span>EVENT DETAILS</span></div>
+        <ol id="operationLog" class="operation-log" aria-label="Newest operations first"></ol>
+        <div class="trace-footer"><span><span class="small-dot" aria-hidden="true"></span> NEWEST FIRST</span><span>LATEST 48 EVENTS · O(1) QUEUE OPERATIONS</span></div>
+      </section>
+    </section>
+
+    <section class="logic-section page-width" id="dsa-logic" aria-labelledby="logic-title">
+      <div class="section-heading"><div><div class="eyebrow muted">WHY THESE DATA STRUCTURES?</div><h2 id="logic-title">Two queues. <span class="muted-heading">Two jobs.</span></h2></div><span class="section-side-note mono">THE LOGIC BEHIND THE DELIVERY</span></div>
+      <div class="logic-grid">
+        <article class="logic-card"><div class="logic-card-top"><span class="logic-icon lime-text" aria-hidden="true">↻</span><span class="tiny-label">01 / REGULAR LANE</span><span class="complexity">O(1)</span></div><h3>Circular Queue</h3><p>Regular orders follow FIFO: the first order in is the first order out. A fixed array holds 8 orders. When an order leaves, its slot becomes available for reuse.</p><div class="code-example"><span class="code-comment">// The rear wraps; the array stays put.</span><code>rear = (rear + 1) % capacity</code></div><p class="logic-detail">Front points to the next order to leave. Rear points to the last order added. A count distinguishes a full queue from an empty one.</p><div class="method-tags"><code>enqueue()</code><code>dequeue()</code><code>front</code><code>rear</code><code>isFull()</code><code>isEmpty()</code></div></article>
+        <article class="logic-card deque-logic"><div class="logic-card-top"><span class="logic-icon violet-text" aria-hidden="true">⇄</span><span class="tiny-label">02 / PRIORITY LANE</span><span class="complexity">O(1)</span></div><h3>Deque</h3><p>Some orders need a faster route. Urgent, delayed or reassigned orders enter at the front. Special orders with lower priority join at the rear.</p><div class="code-example"><span class="code-comment">// Every dispatch checks this lane first.</span><code>!deque.isEmpty() ? deque : queue</code></div><p class="logic-detail">Insert or remove at either end. This implementation also uses a fixed circular array, so all four operations take constant time.</p><div class="method-tags"><code>addFront()</code><code>addRear()</code><code>removeFront()</code><code>removeRear()</code></div></article>
+      </div>
+      <div class="priority-rule"><span class="rule-label">THE DISPATCH RULE</span><code><span>IF</span> Deque has orders → removeFront() <span>ELSE</span> → Circular Queue.dequeue()</code><span class="rule-arrow" aria-hidden="true">→ RIDER</span></div>
+    </section>
+
+    <section class="about-section page-width" id="about" aria-labelledby="about-title"><div><div class="eyebrow muted">ENGINEERED TO EXPLAIN</div><h2 id="about-title">Smart Food Delivery<br>Dispatch System</h2></div><div class="about-copy"><p>DashFlow is a DSA mini-project that turns Circular Queue and Deque algorithms into a working delivery dispatch simulation. Every order, pointer update and dispatch can be followed in the frontend visualization.</p><p>Built with HTML, CSS and vanilla JavaScript. The explicit array and index algorithms translate directly into a Java implementation. Ready for a live demonstration, a viva, or a GitHub Pages repository.</p><div class="about-tags"><span>MANUAL DATA STRUCTURES</span><span>NO FRAMEWORKS</span><span>FRONTEND SIMULATION</span></div></div></section>
+  </main>
+  <footer class="site-footer page-width"><a class="footer-brand" href="#top">DashFlow<span>.</span></a><span>Smart dispatch. Sound fundamentals.</span><span class="footer-session">IN-BROWSER SESSION · RESETS ON REFRESH <a href="#top" aria-label="Back to top">↑</a></span></footer>
+  <noscript><div class="noscript-message">DashFlow needs JavaScript enabled to simulate queue operations.</div></noscript>
+</body>
+</html>
